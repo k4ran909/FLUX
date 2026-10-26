@@ -1,33 +1,41 @@
 import type { IconProps } from './icons/props.ts'
 
-/** Native viewBox of {@link FISH_LOGO_PATH} (width and height in user units). */
-export const FISH_LOGO_VIEWBOX = { width: 24, height: 18 }
+/** Native viewBox of {@link FISH_LOGO_PATH}: the mark's painted bounds widened to a 4:3 box. */
+export const FISH_LOGO_VIEWBOX = { x: 21.33, y: 48, width: 301.33, height: 226 }
 
-/** Stroke width of {@link FISH_LOGO_PATH} in viewBox units. */
-export const FISH_LOGO_STROKE_WIDTH = 2.5
+/** Stroke width of {@link FISH_LOGO_PATH} in viewBox units; the stroke rounds the block corners. */
+export const FISH_LOGO_STROKE_WIDTH = 12
 
-/** The FLUX wave mark: three open subpaths drawn as round-capped strokes, exported for consumers that compose their own svg around the same geometry. */
-export const FISH_LOGO_PATH = 'M5 4.2C8 1.4 11 1.4 13.5 4.2S19 7 21.5 4.2'
-  + 'M2.5 9C5.5 6.2 8.5 6.2 11.5 9S17.5 11.8 21.5 9'
-  + 'M2.5 13.8C5 11 8 11 10.5 13.8S16 16.6 19 13.8'
+/** The FLUX block mark: four closed polygons, filled and stroked with round joins, exported for consumers that compose their own svg around the same geometry. */
+export const FISH_LOGO_PATH = 'M134 102L214 60L214 138L134 138Z'
+  + 'M232 54L258 54L232 70Z'
+  + 'M108 156L214 156L214 226L134 268L134 184L86 184Z'
+  + 'M232 157L258 157L232 173Z'
 
 /**
- * Render the FLUX wave mark.
- * @param props.size - width in px (default 24; height keeps the 24:18 ratio).
+ * Render the FLUX block mark.
+ * @param props.size - width in px (default 24; height keeps the 4:3 ratio).
  * @param props.className - extra class for layout placement.
  * @returns the logo svg (aria-hidden; pair with the wordmark for accessibility).
  */
 export function FishLogo({ size = 24, className }: IconProps) {
+  const { x, y, width, height } = FISH_LOGO_VIEWBOX
   return (
     <svg
       width={size}
-      height={(size * FISH_LOGO_VIEWBOX.height) / FISH_LOGO_VIEWBOX.width}
+      height={(size * height) / width}
       className={className}
-      viewBox={`0 0 ${FISH_LOGO_VIEWBOX.width} ${FISH_LOGO_VIEWBOX.height}`}
+      viewBox={`${x} ${y} ${width} ${height}`}
       fill="none"
       aria-hidden="true"
     >
-      <path d={FISH_LOGO_PATH} stroke="currentColor" strokeWidth={FISH_LOGO_STROKE_WIDTH} strokeLinecap="round" />
+      <path
+        d={FISH_LOGO_PATH}
+        fill="currentColor"
+        stroke="currentColor"
+        strokeWidth={FISH_LOGO_STROKE_WIDTH}
+        strokeLinejoin="round"
+      />
     </svg>
   )
 }

@@ -9,10 +9,6 @@
     }
   }
 </style>
-<defs>
-<linearGradient id="fx-tile" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e1b4b"/><stop offset="1" stop-color="#0b1020"/></linearGradient>
-<linearGradient id="fx-wave" gradientUnits="userSpaceOnUse" x1="2" y1="0" x2="22" y2="0"><stop offset="0" stop-color="#a78bfa"/><stop offset="1" stop-color="#22d3ee"/></linearGradient>
-</defs>
-<rect x="161.33333333333334" y="0" width="40" height="40" rx="7.5" fill="url(#fx-tile)"/><g><g transform="translate(169.33333333333334 11) scale(1)" fill="none" stroke="url(#fx-wave)" stroke-width="2.5" stroke-linecap="round"><path d="M5 4.2C8 1.4 11 1.4 13.5 4.2S19 7 21.5 4.2" /><path d="M2.5 9C5.5 6.2 8.5 6.2 11.5 9S17.5 11.8 21.5 9" /><path d="M2.5 13.8C5 11 8 11 10.5 13.8S16 16.6 19 13.8" /></g></g>
-<g transform="translate(215.33333333333334 7) scale(1.0833333333333333)"><g fill="none" stroke="var(--dsw-alias-label-primary)" stroke-width="4.4" stroke-linejoin="miter"><clipPath id="fx-word-clip"><rect x="0" y="0" width="88" height="24"/></clipPath><g clip-path="url(#fx-word-clip)"><path d="M16 2.2H2.2V24M2.2 12.4H13.5"/><path d="M24.2 0V21.8H38.5"/><path d="M46.2 0V13.8A8 8 0 0 0 62.2 13.8V0"/><path d="M70.5 -1L87.5 25M87.5 -1L70.5 25"/></g></g></g>
+<g transform="translate(153.41297935103245 -7.070796460176993) scale(0.168141592920354)"><g fill="var(--dsw-alias-label-primary)" stroke="var(--dsw-alias-label-primary)" stroke-width="12" stroke-linejoin="round"><polygon points="134,102 214,60 214,138 134,138"/><polygon points="232,54 258,54 232,70"/><polygon points="108,156 214,156 214,226 134,268 134,184 86,184"/><polygon points="232,157 258,157 232,173"/></g></g>
+<g transform="translate(214.33333333333334 7) scale(1.0833333333333333)"><clipPath id="w-welcome"><rect x="0" y="0" width="88" height="24"/></clipPath><g fill="none" stroke="var(--dsw-alias-label-primary)" stroke-width="4.4" stroke-linejoin="miter" clip-path="url(#w-welcome)"><path d="M16 2.2H2.2V24M2.2 12.4H13.5"/><path d="M24.2 0V21.8H38.5"/><path d="M46.2 0V13.8A8 8 0 0 0 62.2 13.8V0"/><path d="M70.5 -1L87.5 25M87.5 -1L70.5 25"/></g></g>
 </svg>
