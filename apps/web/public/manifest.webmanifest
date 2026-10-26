@@ -1,6 +1,6 @@
 {
-  "name": "DeepSeek Harness",
-  "short_name": "DSH",
+  "name": "FLUX",
+  "short_name": "FLUX",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
