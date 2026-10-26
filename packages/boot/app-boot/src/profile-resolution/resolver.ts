@@ -732,18 +732,32 @@ class ResolutionRouter {
 
 function internalModules(): InternalModules {
   const require = createRequire(import.meta.url)
-  const addon = require('node-addon-require-builtin') as { requireBuiltin(moduleId: string): unknown }
-  const esmModule = addon.requireBuiltin('internal/modules/esm/loader') as {
+  // Each addon lookup costs hundreds of milliseconds, while `--expose-internals` reaches the
+  // same module instances through an ordinary require, as the vendored Loader's lookup does.
+  const exposed = process.execArgv.includes('--expose-internals')
+  let addon: { requireBuiltin(moduleId: string): unknown } | undefined
+  const requireInternal = (moduleId: string): unknown => {
+    if (exposed) {
+      try {
+        return require(moduleId)
+      } catch (_error) {
+        // Fall back to the addon for internals that stay private.
+      }
+    }
+    addon ??= require('node-addon-require-builtin') as { requireBuiltin(moduleId: string): unknown }
+    return addon.requireBuiltin(moduleId)
+  }
+  const esmModule = requireInternal('internal/modules/esm/loader') as {
     getOrInitializeCascadedLoader(): ModuleLoaderV1 | ModuleLoaderV2
   }
-  const cjsModule = addon.requireBuiltin('internal/modules/cjs/loader') as { Module: CommonJsModule }
-  const cjsHelpers = addon.requireBuiltin('internal/modules/helpers') as {
+  const cjsModule = requireInternal('internal/modules/cjs/loader') as { Module: CommonJsModule }
+  const cjsHelpers = requireInternal('internal/modules/helpers') as {
     getCjsConditions(): ReadonlySet<string>
   }
-  const esmUtils = addon.requireBuiltin('internal/modules/esm/utils') as {
+  const esmUtils = requireInternal('internal/modules/esm/utils') as {
     getDefaultConditions(): readonly string[]
   }
-  const esmResolve = addon.requireBuiltin('internal/modules/esm/resolve') as {
+  const esmResolve = requireInternal('internal/modules/esm/resolve') as {
     defaultResolve(
       specifier: string,
       context: { parentURL?: string; conditions?: readonly string[] },

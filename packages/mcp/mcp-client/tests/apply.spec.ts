@@ -212,6 +212,28 @@ describe('apply (plugin lifecycle)', () => {
     await fiber.dispose()
   })
 
+  it('activates before initial discovery when startup waiting is off, then publishes its tools', async () => {
+    const connection: PromiseWithResolvers<void> = Promise.withResolvers()
+    mockConnect.mockImplementation(async () => {
+      await connection.promise
+    })
+    const fiber = ctx.plugin({ name: 'mcp-client-lifecycle', inject, apply }, { ...stdioConfig, waitForStartup: false })
+
+    await fiber
+    expect(mockConnect).toHaveBeenCalled()
+    expect(ctx.tools.get('mcp__srv__remote')).toBeUndefined()
+
+    connection.resolve()
+    await vi.waitFor(() => { expect(ctx.tools.get('mcp__srv__remote')).toBeDefined() })
+    await fiber.dispose()
+  })
+
+  it('still waits for startup when a fatal startup failure is configured', async () => {
+    mockConnect.mockRejectedValue(new Error('spawn failed'))
+    await expect(apply(ctx, { ...stdioConfig, waitForStartup: false, failOnStartupError: true, reconnect: { enabled: false } }))
+      .rejects.toThrow('initial connection or tool synchronization failed')
+  })
+
   it('rejects a duplicate serverName at load and leaves the first instance intact', async () => {
     await apply(ctx, stdioConfig)
     expect(ctx.tools.get('mcp__srv__remote')).toBeDefined()
