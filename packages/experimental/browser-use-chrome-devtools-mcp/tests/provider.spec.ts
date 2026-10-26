@@ -50,7 +50,7 @@ it('connects the user\'s running Chrome through autoConnect only for Sessions th
   Provider.apply(ctx, Provider.Config({ mode: 'user-chrome' }))
   const options = vi.mocked(mountSessionMcp).mock.calls[0]![1]
   expect(options).toMatchObject({ exclusive: true, activation: 'command' })
-  expect(options.args.slice(1)).toEqual(['--no-usage-statistics', '--autoConnect', '--channel', 'stable', '--no-performance-crux'])
+  expect(options.args.slice(1)).toEqual(['--no-usage-statistics', '--autoConnect', '--channel', 'stable', '--categoryPerformance=false', '--categoryMemory=false', '--categoryEmulation=false'])
   await vi.waitFor(() => { expect(command?.name).toBe('browser') })
 
   // The real check reads this machine's Chrome profile; whichever way it answers, a refusal must not connect.

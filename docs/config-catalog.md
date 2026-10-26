@@ -938,21 +938,11 @@ export type ChromeChannel = 'stable' | 'beta' | 'dev' | 'canary'
 
 - `inject`: `browserUse` · `agents` · `tools` · `systemPrompt` · `workingDirectory`
 - `refs`: `BrowserMcpConfig` (`@deepseek-ai/dsh-experimental-browser-use-runtime/mcp`)
-- `source`: [`packages/experimental/browser-use-playwright-mcp/src/index.ts:31`](../packages/experimental/browser-use-playwright-mcp/src/index.ts)
+- `source`: [`packages/experimental/browser-use-playwright-mcp/src/index.ts:16`](../packages/experimental/browser-use-playwright-mcp/src/index.ts)
 
 ```ts config-catalog
-/** Fixed Chromium launch, existing-browser attachment, or user-browser extension settings. */
-export type Config = BrowserMcpConfig | ExtensionConfig
-
-/** The user's running Chrome or Edge, reached through the Playwright Extension and turned on per Session with `/browser`. */
-export interface ExtensionConfig {
-  /** Drive tabs of the user's own browser after they approve the extension's connection prompt. */
-  mode: 'extension'
-  /** Browser holding the extension; defaults to Chrome. */
-  browser: 'chrome' | 'msedge'
-  /** Per-call timeout override in milliseconds; omission uses the MCP client default. */
-  toolCallTimeoutMs?: number
-}
+/** Fixed Chromium launch or existing-browser attachment settings. */
+export type Config = BrowserMcpConfig
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-experimental-browser-use-playwright-mcp -->
 

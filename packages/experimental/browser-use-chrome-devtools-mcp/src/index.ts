@@ -116,8 +116,11 @@ export function apply(ctx: Context, config: Config): void {
   const cli = fileURLToPath(import.meta.resolve('chrome-devtools-mcp/build/src/bin/chrome-devtools-mcp.js'))
   const args = [cli, '--no-usage-statistics']
   if (config.mode === 'user-chrome') {
-    // Performance tools would otherwise send the user's page URLs to Google's CrUX API.
-    args.push('--autoConnect', '--channel', config.channel, '--no-performance-crux')
+    // Using websites needs input, navigation, pages, console, and network tools. Performance traces
+    // (which would also send page URLs to Google's CrUX API), heap snapshots, and device emulation
+    // add about 1,400 prompt tokens to every request without serving that.
+    args.push('--autoConnect', '--channel', config.channel,
+      '--categoryPerformance=false', '--categoryMemory=false', '--categoryEmulation=false')
   } else if (config.mode === 'attach') {
     args.push(/^wss?:/u.test(config.endpoint) ? '--ws-endpoint' : '--browser-url', config.endpoint)
   } else {

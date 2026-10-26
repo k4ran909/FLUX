@@ -30,8 +30,7 @@
   "license": "MIT",
   "dependencies": {
     "@deepseek-ai/dsh-experimental-browser-use-runtime": "workspace:*",
-    "@playwright/mcp": "0.0.80",
-    "@deepseek-ai/schemastery": "workspace:~"
+    "@playwright/mcp": "0.0.80"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "workspace:~",
@@ -53,7 +52,6 @@
     "@deepseek-ai/dsh-tools": "workspace:*",
     "@deepseek-ai/dsh-system-prompt": "workspace:*",
     "@deepseek-ai/dsh-session-projection": "workspace:*",
-    "@deepseek-ai/dsh-working-directory": "workspace:*",
-    "@deepseek-ai/dsh-commands": "workspace:*"
+    "@deepseek-ai/dsh-working-directory": "workspace:*"
   }
 }

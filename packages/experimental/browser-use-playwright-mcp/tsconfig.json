@@ -16,9 +16,6 @@
     },
     {
       "path": "../../session/working-directory"
-    },
-    {
-      "path": "../../../vendor/schemastery"
     }
   ]
 }

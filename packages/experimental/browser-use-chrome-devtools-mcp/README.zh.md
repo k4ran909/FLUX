@@ -35,7 +35,7 @@ kind: "package-reference"
     headless: true
 ```
 
-使用 `mode: user-chrome` 操作用户正在运行的 Chrome（144+），保留其标签页和登录状态。用户在 `chrome://inspect/#remote-debugging` 打开 Chrome 的开关；在用户运行 `/browser` 之前，任何 Session 都不会连接。`/browser` 会检查 Chrome 是否接受连接，否则返回上述设置步骤。同一时间只有一个 Session 持有浏览器；`/browser off` 释放它，`/browser status` 报告状态。首次浏览器操作时 Chrome 会请用户批准连接，性能工具不会把页面 URL 发送到 CrUX API。
+使用 `mode: user-chrome` 操作用户正在运行的 Chrome（144+），保留其标签页和登录状态。用户在 `chrome://inspect/#remote-debugging` 打开 Chrome 的开关；在用户运行 `/browser` 之前，任何 Session 都不会连接。`/browser` 会检查 Chrome 是否接受连接，否则返回上述设置步骤。同一时间只有一个 Session 持有浏览器；`/browser off` 释放它，`/browser status` 报告状态。首次浏览器操作时 Chrome 会请用户批准连接。此模式不提供性能追踪、堆快照和设备模拟工具，每次请求可少约 1,400 个 token，也不会把页面 URL 发送到 CrUX API。
 
 使用 `mode: attach`，并在 `endpoint` 中设置 HTTP(S) 调试 URL 或 WS(S) 浏览器端点，即可操作已有浏览器。新的活动 Session 在初始化时占用附加连接，并持续保留直到卸载。如果连接已被占用，本次激活不使用该浏览器，但继续运行，后续轮次不会重试。连接释放后，新创建或恢复的激活可以获取它。其他 Session 的直接调用会失败。清理只断开连接，保留外部浏览器及其页面。
 
