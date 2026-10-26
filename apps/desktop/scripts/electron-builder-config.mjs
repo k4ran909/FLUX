@@ -20,7 +20,7 @@ import {
   resolveWindowsUpdatePublisher,
   scrubWindowsSigningEnvironment,
 } from './windows-sign.mjs'
-import { resolveDesktopAutoUpdateConfig } from './desktop-auto-update-environment.mjs'
+import { resolveDesktopAutoUpdateConfig, resolveDesktopUnsignedUpdateFeed } from './desktop-auto-update-environment.mjs'
 import { resolveDesktopBuildCommit } from './desktop-build-commit.mjs'
 import { resolveDesktopBuildVersion } from './desktop-build-version.mjs'
 import { resolveDesktopPolicyEnvironment } from './desktop-policy-environment.mjs'
@@ -96,7 +96,7 @@ export function createElectronBuilderConfig(
   if (windowsSigner !== undefined) {
     installWindowsNsisBootstrapSigner({ sign: windowsSigner })
   }
-  const update = unsigned ? undefined : resolveDesktopAutoUpdateConfig(env, resolvedPlatform, resolvedArch)
+  const update = unsigned ? resolveDesktopUnsignedUpdateFeed(env) : resolveDesktopAutoUpdateConfig(env, resolvedPlatform, resolvedArch)
   if (preparedRuntime !== undefined) buildPaths.dsh = preparedRuntime
   // electron-builder merges extraMetadata into the packaged manifest, so a build version here reaches
   // the artifact names, the update feed, and the installed app.getVersion() the updater compares against.

@@ -132,6 +132,31 @@ function httpsOrigin(value, name) {
   return parsed.origin
 }
 
+/** Environment variable that gives unsigned builds a self-hosted generic update feed. */
+export const DESKTOP_UPDATE_FEED_URL_ENV = 'DSH_DESKTOP_UPDATE_FEED_URL'
+
+/**
+ * Resolve the optional self-hosted feed of an unsigned build, such as a GitHub latest-release download URL.
+ * @param {NodeJS.ProcessEnv} env - Packaging environment.
+ * @returns {{ channel: 'nightly' | 'latest', publicUrl: string } | undefined} Generic feed, or undefined when updates stay disabled.
+ */
+export function resolveDesktopUnsignedUpdateFeed(env) {
+  const value = env[DESKTOP_UPDATE_FEED_URL_ENV]?.trim()
+  if (value === undefined || value === '') return undefined
+  let parsed
+  try {
+    parsed = new URL(value)
+  }
+  catch {
+    throw new Error(`desktop auto-update: ${DESKTOP_UPDATE_FEED_URL_ENV} must be an absolute HTTPS URL`)
+  }
+  if (parsed.protocol !== 'https:' || parsed.username !== '' || parsed.password !== '' || parsed.search !== '' || parsed.hash !== '') {
+    throw new Error(`desktop auto-update: ${DESKTOP_UPDATE_FEED_URL_ENV} must be an HTTPS URL without credentials, query, or fragment`)
+  }
+  // electron-updater resolves feed files against this URL, so a missing slash would drop its last segment.
+  return { channel: resolveDesktopUpdateChannel(env), publicUrl: parsed.href.endsWith('/') ? parsed.href : `${parsed.href}/` }
+}
+
 /**
  * Resolve the public updater URL and object prefixes for one release target.
  * @param {NodeJS.ProcessEnv} env - Packaging or upload environment.

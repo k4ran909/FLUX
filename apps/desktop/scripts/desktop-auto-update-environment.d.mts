@@ -92,6 +92,18 @@ export function resolveDesktopUploadConfig(
   arch: string,
 ): DesktopUploadConfig
 
+/** Environment variable that gives unsigned builds a self-hosted generic update feed. */
+export const DESKTOP_UPDATE_FEED_URL_ENV: 'DSH_DESKTOP_UPDATE_FEED_URL'
+
+/**
+ * Resolve the optional self-hosted feed of an unsigned build, such as a GitHub latest-release download URL.
+ * @param env - Packaging environment.
+ * @returns Generic feed with a trailing slash, or undefined when updates stay disabled.
+ */
+export function resolveDesktopUnsignedUpdateFeed(
+  env: NodeJS.ProcessEnv,
+): { readonly channel: 'nightly' | 'latest'; readonly publicUrl: string } | undefined
+
 /**
  * Resolve the packaged update channel, defaulting omitted local settings to nightly.
  * @param env Packaging settings.
