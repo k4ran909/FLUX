@@ -35,14 +35,17 @@ Mount both entries before creating or resuming a Session, in a profile compositi
     headless: true
 ```
 
+Use `mode: user-chrome` to drive the user's running Chrome (144+) with its tabs and sign-ins. The user enables Chrome's switch at `chrome://inspect/#remote-debugging`; no Session connects until its user runs `/browser`, which checks that Chrome accepts connections and otherwise returns these setup steps. One Session holds the browser at a time; `/browser off` releases it and `/browser status` reports it. Chrome asks the user to approve the connection on the first browser action, and performance tools do not send page URLs to the CrUX API.
+
 Use `mode: attach` and set `endpoint` to an HTTP(S) debugging URL or WS(S) browser endpoint to operate an existing browser. The new live Session claims the attachment during initialization and retains it until unloading. If the attachment is busy, that activation continues without this browser and does not retry on later turns. After release, a newly created or resumed activation can acquire it. Direct calls from another Session fail. Cleanup disconnects and leaves the external browser and its pages running.
 
 | Field | Default | Meaning |
 |---|---|---|
-| `mode` | required | `launch` or `attach`, fixed for this provider activation |
+| `mode` | required | `launch`, `attach`, or `user-chrome`, fixed for this provider activation |
 | `headless` | `true` | Launch without a visible window |
 | `executablePath` | upstream discovery | Chromium executable for launch |
 | `endpoint` | required for attach | Existing browser debugging endpoint |
+| `channel` | `stable` | user-chrome: Chrome channel (`stable`, `beta`, `dev`, `canary`) whose running instance to connect |
 | `toolCallTimeoutMs` | MCP client default | Per-call timeout in milliseconds |
 
 The [configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-experimental-browser-use-chrome-devtools-mcp) lists accepted fields. The profile or preset selects the browser mode.

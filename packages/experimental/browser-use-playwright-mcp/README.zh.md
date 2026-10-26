@@ -35,14 +35,17 @@ kind: "package-reference"
     headless: true
 ```
 
+使用 `mode: extension` 通过 Playwright Extension 操作用户正在运行的 Chrome 或 Edge 的标签页。在用户运行 `/browser` 之前，任何 Session 都不会连接；首次浏览器操作时扩展会询问要共享哪个标签页。同一时间只有一个 Session 持有浏览器；`/browser off` 释放它。
+
 使用 `mode: attach`，并在 `endpoint` 中设置 HTTP(S) 调试 URL 或 WS(S) 浏览器端点，即可操作已有浏览器。新的活动 Session 在初始化时占用附加连接，并持续保留直到卸载。如果连接已被占用，本次激活不使用该浏览器，但继续运行，后续轮次不会重试。连接释放后，新创建或恢复的激活可以获取它。其他 Session 的直接调用会失败。清理只断开连接，保留外部浏览器及其页面。
 
 | 字段 | 默认值 | 含义 |
 |---|---|---|
-| `mode` | 必填 | `launch` 或 `attach`，在本次提供方激活期间固定 |
+| `mode` | 必填 | `launch`、`attach` 或 `extension`，在本次提供方激活期间固定 |
 | `headless` | `true` | 启动时不显示窗口 |
 | `executablePath` | 上游发现 | 启动使用的 Chromium 可执行文件 |
 | `endpoint` | attach 时必填 | 已有浏览器调试端点 |
+| `browser` | `chrome` | extension：装有 Playwright Extension 的浏览器，`chrome` 或 `msedge` |
 | `toolCallTimeoutMs` | MCP 客户端默认值 | 单次调用超时，单位为毫秒 |
 
 [配置目录](../../../docs/config-catalog.zh.md#deepseek-aidsh-experimental-browser-use-playwright-mcp)列出接受的字段。浏览器模式由 profile 或 preset 选择。子进程会清空继承的 `PLAYWRIGHT_MCP_*` 选项，避免其替换该配置。

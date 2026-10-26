@@ -9,6 +9,7 @@ import { createScope } from '@deepseek-ai/dsh-scope'
 import type { Scope } from '@deepseek-ai/dsh-scope'
 import { SessionResources } from './index.ts'
 import type {} from '@deepseek-ai/dsh-browser-use'
+import type {} from '@deepseek-ai/dsh-commands'
 import type {} from '@deepseek-ai/dsh-tools'
 import type {} from '@deepseek-ai/dsh-system-prompt'
 import type {} from '@deepseek-ai/dsh-working-directory'
@@ -84,6 +85,34 @@ export interface SessionMcpOptions {
   env?: Record<string, string>
   /** Per-call timeout override; omission retains the MCP client default. */
   toolCallTimeoutMs?: number
+  /**
+   * When a Session connects: `agent` (default) awaits the server during each Agent's creation;
+   * `command` leaves new Sessions without the browser until {@link SessionMcpControl.connect}.
+   */
+  activation?: 'agent' | 'command'
+}
+
+/** Per-Session connection control for command-activated browsers. */
+export interface SessionMcpControl {
+  /**
+   * Start the browser server for one live Session and expose its tools from that Session's next step.
+   * @param agent - exact live Agent that will own the browser.
+   * @param signal - optional cancellation of this wait; acquisition remains Session-owned.
+   * @returns whether a new connection was made rather than an existing one kept.
+   * @throws when another Session holds an exclusive browser or the server fails to start.
+   */
+  connect(agent: Agent, signal?: AbortSignal): Promise<boolean>
+  /**
+   * Stop one Session's browser server and remove its tools, releasing an exclusive browser.
+   * @param agent - exact live Agent.
+   * @returns whether the Session was connected.
+   */
+  disconnect(agent: Agent): Promise<boolean>
+  /**
+   * @param agent - exact live Agent.
+   * @returns whether the Session's browser tools are active.
+   */
+  connected(agent: Agent): boolean
 }
 
 interface ClientState {
@@ -96,10 +125,11 @@ interface ClientState {
  * A busy attachment leaves that activation without browser tools; its other turns continue.
  * Calls are serialized per Session; unload closes every server before releasing registration.
  * @param ctx - provider context supplying browser use, Agents, tools, prompt assembly, and working directories.
- * @param options - provider identity, attachment exclusivity, and executable configuration.
+ * @param options - provider identity, attachment exclusivity, executable configuration, and activation.
+ * @returns connection control; only `command` activation needs it.
  * @throws when the working-directory provider is absent, before browser resources are registered.
  */
-export function mountSessionMcp(ctx: Context, options: SessionMcpOptions): void {
+export function mountSessionMcp(ctx: Context, options: SessionMcpOptions): SessionMcpControl {
   const workingDirectory = ctx.get('workingDirectory')
   if (workingDirectory === undefined) throw new Error(`${options.name}: browser MCP requires a working-directory provider`)
   let resources!: SessionResources<Scope>
@@ -179,6 +209,7 @@ export function mountSessionMcp(ctx: Context, options: SessionMcpOptions): void 
     }
   }, `${options.name}.sessions`)
   ctx.on('agent/created', async ({ agent, signal }) => {
+    if (options.activation === 'command') return
     const state: ClientState = { status: resources.available(agent) ? 'ready' : 'blocked' }
     agent.ctx.effect(() => async () => {
       clients.delete(agent)
@@ -216,5 +247,78 @@ export function mountSessionMcp(ctx: Context, options: SessionMcpOptions): void 
     const assembly = await next()
     if (agent === undefined || clients.get(agent)?.status === 'ready') return assembly
     return { ...assembly, sections: assembly.sections.filter(section => section.name !== `mcp:${options.name}`) }
+  })
+  return {
+    async connect(agent, signal) {
+      if (clients.get(agent)?.status === 'ready') return false
+      if (stopping || !resources.available(agent)) {
+        throw new Error(`${options.name}: the browser is in use by another Session; turn it off there first`)
+      }
+      await resources.get(agent, signal)
+      // open() registered the Session's cleanup; its close() removes this state again.
+      clients.set(agent, { status: 'ready' })
+      return true
+    },
+    disconnect: agent => resources.release(agent),
+    connected: agent => clients.get(agent)?.status === 'ready',
+  }
+}
+
+/** How `/browser` describes and checks one user-browser provider. */
+export interface BrowserCommandOptions {
+  /** Display name of the user's browser, such as `Chrome`. */
+  browserName: string
+  /** What happens on the first browser action, shown when control turns on. */
+  firstUse: string
+  /**
+   * Check that the user's browser can accept a connection before the Session connects.
+   * @returns setup instructions when it cannot, otherwise undefined.
+   */
+  preflight?: () => Promise<string | undefined>
+}
+
+/**
+ * Register `/browser [on|off|status]`, which connects the invoking Session to the user's own browser.
+ * The command child activates only when a command registry is composed.
+ * @param ctx - provider context.
+ * @param control - per-Session control from a `command`-activated {@link mountSessionMcp}.
+ * @param options - display text and the provider's readiness check.
+ */
+export function registerBrowserCommand(ctx: Context, control: SessionMcpControl, options: BrowserCommandOptions): void {
+  const help = 'Use /browser to let this session control your browser, /browser off to stop, /browser status to check.'
+  ctx.inject(['commands'], (commandCtx) => {
+    commandCtx.commands.register({
+      name: 'browser',
+      description: `Let this session control your ${options.browserName} tabs`,
+      input: { hint: '[on|off|status]' },
+      handler: async ({ agent, rawInput }) => {
+        const action = rawInput.trim().toLowerCase() || 'on'
+        if (action === 'status') {
+          return { kind: 'success', text: control.connected(agent)
+            ? `Browser control is on for this session. ${options.firstUse}`
+            : `Browser control is off for this session. ${help}` }
+        }
+        if (action === 'off') {
+          return { kind: 'success', text: await control.disconnect(agent)
+            ? `Browser control is off for this session. ${options.browserName} and its tabs stay open.`
+            : 'Browser control was already off for this session.' }
+        }
+        if (action !== 'on') return { kind: 'error', text: `Unknown /browser option "${action}". ${help}` }
+        if (control.connected(agent)) return { kind: 'success', text: 'Browser control is already on for this session.' }
+        const setup = await options.preflight?.()
+        if (setup !== undefined) return { kind: 'error', text: setup }
+        try {
+          await control.connect(agent)
+        } catch (error) {
+          return { kind: 'error', text: error instanceof Error ? error.message : String(error) }
+        }
+        return {
+          kind: 'success',
+          text: `Browser control is on for this session. Ask me to do something in ${options.browserName}.
+${options.firstUse}
+Use /browser off to stop.`,
+        }
+      },
+    })
   })
 }

@@ -131,6 +131,18 @@
     - id: schedule
       name: '@deepseek-ai/dsh-schedule'
 
+    # Browser control of the user's running Chrome through Chrome's own
+    # remote-debugging switch (chrome://inspect/#remote-debugging). No Session
+    # connects until its user runs /browser; /browser off releases it.
+    - id: browser-use
+      name: '@deepseek-ai/dsh-browser-use'
+
+    - id: browser-use-user-chrome
+      name: '@deepseek-ai/dsh-experimental-browser-use-chrome-devtools-mcp'
+      config:
+        mode: user-chrome
+        channel: stable
+
     # Configuration-surface reads and writes over Typert Remote. Each method
     # reports an actionable error when its settings-domain provider is absent.
     - id: ui-settings-account

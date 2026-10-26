@@ -27,6 +27,7 @@ import Projections from '@deepseek-ai/dsh-session-projection'
 import WorkingDirectory from '@deepseek-ai/dsh-working-directory'
 import { bindScopeParent } from '@deepseek-ai/dsh-scope'
 import { BrowserMcpConfig, mountSessionMcp, validateBrowserMcpConfig } from '../src/mcp.ts'
+import type { SessionMcpControl } from '../src/mcp.ts'
 
 const fixture = fileURLToPath(new URL('./mcp-fixture.mjs', import.meta.url))
 const roots: string[] = []
@@ -80,7 +81,8 @@ class PresentationRuntime extends PtcRuntime {
   run(): Promise<never> { return Promise.reject(new Error('Unexpected PTC execution in a presentation test')) }
 }
 
-async function load(exclusive = false, mode?: string, toolCallTimeoutMs?: number, toolOrder?: string[]) {
+async function load(exclusive = false, mode?: string, toolCallTimeoutMs?: number, toolOrder?: string[], activation?: 'command') {
+  let control: SessionMcpControl | undefined
   const root = await mkdtemp(join(tmpdir(), 'dsh-browser-mcp-'))
   roots.push(root)
   const model = new FixtureModel()
@@ -90,7 +92,7 @@ async function load(exclusive = false, mode?: string, toolCallTimeoutMs?: number
     ['fs', LocalFileSystem], ['workingDirectory', WorkingDirectory],
     ['model', { inject: ['llm'], apply(ctx: Context) { ctx.effect(() => ctx.llm.registerAdapter(['fixture'], model)) } }],
     ['browser', { inject: ['browserUse', 'agents', 'tools', 'systemPrompt', 'workingDirectory'], apply(ctx: Context) {
-      mountSessionMcp(ctx, { name: 'browser-fixture', exclusive, command: process.execPath, args: [fixture, root, ...mode === undefined ? [] : [mode]], ...toolCallTimeoutMs === undefined ? {} : { toolCallTimeoutMs, env: {} } })
+      control = mountSessionMcp(ctx, { name: 'browser-fixture', exclusive, command: process.execPath, args: [fixture, root, ...mode === undefined ? [] : [mode]], ...toolCallTimeoutMs === undefined ? {} : { toolCallTimeoutMs, env: {} }, ...activation === undefined ? {} : { activation } })
     } }],
   ])
   const configPath = join(root, 'cordis.yml')
@@ -110,7 +112,7 @@ async function load(exclusive = false, mode?: string, toolCallTimeoutMs?: number
   await ctx.loader.create({ name: 'cordis:include', config: { path: pathToFileURL(configPath).href } })
   await ctx.loader.await()
   const browser = [...ctx.loader.entries()].find(entry => entry.options.id === 'browser')!.fiber!
-  return { ctx, root, model, browser }
+  return { ctx, root, model, browser, control: () => control! }
 }
 
 async function warm(ctx: Context, agent: Agent, signal = new AbortController().signal) {
@@ -183,6 +185,30 @@ it('waits for SystemPrompt and ToolRuntime before reserving the provider', async
 })
 
 describe('Session MCP Loader composition', () => {
+  it('connects command-activated Sessions only on request and releases an exclusive browser on disconnect', async () => {
+    const { ctx, root, control } = await load(true, undefined, undefined, undefined, 'command')
+    const first = await ctx.agents.create({ sessionId: SessionId('first') })
+    const second = await ctx.agents.create({ sessionId: SessionId('second') })
+    expect((await warm(ctx, first.agent)).tools.some(tool => tool.name === TOOL)).toBe(false)
+    expect((await events(root).catch(() => [])).filter(event => event.event === 'initialize')).toEqual([])
+    expect(ctx.browserUse.providerName).toBe('browser-fixture')
+
+    expect(await control().connect(first.agent)).toBe(true)
+    expect(await control().connect(first.agent)).toBe(false)
+    expect(control().connected(first.agent)).toBe(true)
+    expect((await warm(ctx, first.agent)).tools.some(tool => tool.name === TOOL)).toBe(true)
+    expect((await execute(ctx, first.agent)).content).toEqual([{ type: 'text', text: 'Visit 1: direct' }])
+    await expect(control().connect(second.agent)).rejects.toThrow('in use by another Session')
+    expect(control().connected(second.agent)).toBe(false)
+
+    expect(await control().disconnect(first.agent)).toBe(true)
+    expect(await control().disconnect(first.agent)).toBe(false)
+    expect(control().connected(first.agent)).toBe(false)
+    expect((await warm(ctx, first.agent)).tools.some(tool => tool.name === TOOL)).toBe(false)
+    expect(await control().connect(second.agent)).toBe(true)
+    expect((await execute(ctx, second.agent)).content).toEqual([{ type: 'text', text: 'Visit 1: direct' }])
+  })
+
   it('discovers schemas before the first model request and retains distinct state across turns', async () => {
     const { ctx, root, model, browser } = await load(false, undefined, 5000, [TOOL, '<unlisted-tools>'])
     const first = await ctx.agents.create({ sessionId: SessionId('first'), meta: { cwd: root }, agentOptions: { provider: 'fixture', model: 'fixture' } })

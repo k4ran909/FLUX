@@ -907,11 +907,27 @@ export interface Config {
 
 - `inject`: `browserUse` · `agents` · `tools` · `systemPrompt` · `workingDirectory`
 - `refs`: `BrowserMcpConfig` (`@deepseek-ai/dsh-experimental-browser-use-runtime/mcp`)
-- `source`: [`packages/experimental/browser-use-chrome-devtools-mcp/src/index.ts:15`](../packages/experimental/browser-use-chrome-devtools-mcp/src/index.ts)
+- `source`: [`packages/experimental/browser-use-chrome-devtools-mcp/src/index.ts:37`](../packages/experimental/browser-use-chrome-devtools-mcp/src/index.ts)
 
 ```ts config-catalog
-/** Fixed Chromium launch or existing-browser attachment settings. */
-export type Config = BrowserMcpConfig
+/** Fixed Chromium launch, existing-browser attachment, or user-Chrome settings. */
+export type Config = BrowserMcpConfig | UserChromeConfig
+
+/**
+ * The user's running Chrome, reached through Chrome's own remote-debugging switch
+ * (`chrome://inspect/#remote-debugging`, Chrome 144+) and turned on per Session with `/browser`.
+ */
+export interface UserChromeConfig {
+  /** Connect to the user's running Chrome after they allow remote debugging. */
+  mode: 'user-chrome'
+  /** Chrome channel to connect to; defaults to stable. */
+  channel: ChromeChannel
+  /** Per-call timeout override in milliseconds; omission uses the MCP client default. */
+  toolCallTimeoutMs?: number
+}
+
+/** Chrome release channel whose running instance `user-chrome` mode connects to. */
+export type ChromeChannel = 'stable' | 'beta' | 'dev' | 'canary'
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-experimental-browser-use-chrome-devtools-mcp -->
 
@@ -922,11 +938,21 @@ export type Config = BrowserMcpConfig
 
 - `inject`: `browserUse` · `agents` · `tools` · `systemPrompt` · `workingDirectory`
 - `refs`: `BrowserMcpConfig` (`@deepseek-ai/dsh-experimental-browser-use-runtime/mcp`)
-- `source`: [`packages/experimental/browser-use-playwright-mcp/src/index.ts:16`](../packages/experimental/browser-use-playwright-mcp/src/index.ts)
+- `source`: [`packages/experimental/browser-use-playwright-mcp/src/index.ts:31`](../packages/experimental/browser-use-playwright-mcp/src/index.ts)
 
 ```ts config-catalog
-/** Fixed Chromium launch or existing-browser attachment settings. */
-export type Config = BrowserMcpConfig
+/** Fixed Chromium launch, existing-browser attachment, or user-browser extension settings. */
+export type Config = BrowserMcpConfig | ExtensionConfig
+
+/** The user's running Chrome or Edge, reached through the Playwright Extension and turned on per Session with `/browser`. */
+export interface ExtensionConfig {
+  /** Drive tabs of the user's own browser after they approve the extension's connection prompt. */
+  mode: 'extension'
+  /** Browser holding the extension; defaults to Chrome. */
+  browser: 'chrome' | 'msedge'
+  /** Per-call timeout override in milliseconds; omission uses the MCP client default. */
+  toolCallTimeoutMs?: number
+}
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-experimental-browser-use-playwright-mcp -->
 
@@ -2287,7 +2313,7 @@ export interface StdioConfig {
    * Hold plugin activation, and so harness startup, until the initial connection and tool discovery settle
    * (default true). When false, tools appear once the server connects; `failOnStartupError` still waits.
    */
-  waitForStartup: boolean
+  waitForStartup?: boolean
   /** Maximum UTF-8 bytes of attributed server instructions (default 32768). */
   maxInstructionBytes?: number
   /** Automatic reconnect policy after a lost connection; omission uses the defaults. */
@@ -2316,7 +2342,7 @@ export interface StreamableHttpConfig {
    * Hold plugin activation, and so harness startup, until the initial connection and tool discovery settle
    * (default true). When false, tools appear once the server connects; `failOnStartupError` still waits.
    */
-  waitForStartup: boolean
+  waitForStartup?: boolean
   /** Maximum UTF-8 bytes of attributed server instructions (default 32768). */
   maxInstructionBytes?: number
   /** Automatic reconnect policy after a lost connection; omission uses the defaults. */
